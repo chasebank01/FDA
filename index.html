@@ -7,8 +7,8 @@
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #0f0f0f;
-      color: #f2f2f2;
+      background: #121212;
+      color: #f0f0f0;
       margin: 0;
       padding: 0;
     }
@@ -16,52 +16,65 @@
       display: flex;
       align-items: center;
       padding: 1rem;
-      background: #1e1e1e;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      background: #1f1f1f;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.4);
     }
     .logo {
-      width: 30px;
-      height: 30px;
+      width: 32px;
+      height: 32px;
       margin-right: 1rem;
     }
     .title {
       font-size: 1.5rem;
-      font-weight: bold;
     }
     .container {
+      padding: 2rem;
       max-width: 800px;
       margin: auto;
-      padding: 2rem;
     }
     input[type="file"] {
-      background: #292929;
-      border: 1px solid #444;
+      display: block;
+      margin: 1rem 0;
+      background: #333;
       color: white;
       padding: 0.5rem;
-      margin: 1rem 0;
-      border-radius: 6px;
+      border-radius: 4px;
     }
-    .results {
-      background: #1c1c1c;
-      padding: 1rem;
-      margin-top: 1rem;
-      border-radius: 8px;
-      white-space: pre-wrap;
+    .progress-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 2rem;
     }
-    button {
-      margin-top: 1rem;
-      background: #00b894;
-      color: white;
-      padding: 0.6rem 1rem;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
+    .progress-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 10px solid #00b894;
+      border-top: 10px solid transparent;
+      animation: spin 2s linear infinite, zoom 1s ease-in-out infinite alternate;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes zoom {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.2); }
     }
     footer {
       text-align: center;
+      padding: 2rem;
       font-size: 0.9rem;
       color: #aaa;
-      padding: 2rem;
+    }
+    @media (max-width: 600px) {
+      .container {
+        padding: 1rem;
+      }
+      .title {
+        font-size: 1.2rem;
+      }
     }
   </style>
 </head>
@@ -78,18 +91,23 @@
 
   <div class="container">
     <p><strong>About:</strong><br>
-      This tool lets you run a basic forensic analysis on photos, videos, and audio files. It extracts available metadata like the creation date, file type, and calculates how old the file is — all directly in your browser, no uploads required.
+    This web application performs basic forensic analysis on your uploaded media files (images, videos, audio) to extract timestamp information including creation time, date, and more — using available file headers. Designed entirely for the browser, it works without sending your data to any server.
     </p>
 
-    <input type="file" id="fileInput" accept="image/*,video/*,audio/*" />
-    <div class="results" id="output">Upload a media file to view detailed metadata...</div>
-    <button onclick="window.print()">Save as PDF</button>
+    <label>Select an image, video, or audio file:</label>
+    <input type="file" id="fileInput" accept="image/*,video/*,audio/*">
+
+    <div class="progress-container" id="progressContainer" style="display: none;">
+      <div class="progress-circle"></div>
+    </div>
   </div>
 
   <footer>
-    Created for forensic insights using client-side tools. No data is ever uploaded. <br>
-    Inspired by truth-seeking and digital awareness.
+    Developed for forensic learning and awareness. <br>Inspire curiosity. Investigate truth. Protect evidence.
   </footer>
+
+  <!-- ExifReader Library -->
+  <script src="https://unpkg.com/exifreader/dist/exif-reader.min.js"></script>
 
   <script>
     function humanAgeDiff(date) {
@@ -98,4 +116,55 @@
       let years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
       let months = Math.floor((diff % (1000 * 60 * 60 * 24 * 365.25)) / (1000 * 60 * 60 * 24 * 30.44));
       let days = Math.floor((diff % (1000 * 60 * 60 * 24 * 30.44)) / (1000 * 60 * 60 * 24));
-      return `${years} year(s
+      return `${years} year(s), ${months} month(s), ${days} day(s)`;
+    }
+
+    document.getElementById("fileInput").addEventListener("change", function () {
+      const file = this.files[0];
+      if (!file) return;
+
+      const progressContainer = document.getElementById("progressContainer");
+      progressContainer.style.display = "flex";
+
+      setTimeout(() => {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          let output = '';
+          output += `File Name: ${file.name}\n`;
+          output += `Type: ${file.type || "Unknown"}\n`;
+          output += `Size: ${file.size} bytes\n`;
+
+          const modifiedDate = new Date(file.lastModified);
+          output += `Last Modified: ${modifiedDate.toDateString()} ${modifiedDate.toLocaleTimeString()}\n`;
+          output += `File Age: ${humanAgeDiff(modifiedDate)}\n`;
+
+          if (file.type.startsWith("image/")) {
+            try {
+              const tags = ExifReader.load(e.target.result);
+              if (tags && tags.DateTimeOriginal) {
+                const exifDate = tags.DateTimeOriginal.description;
+                output += `EXIF Date: ${exifDate}\n`;
+              } else {
+                output += "EXIF data not found.\n";
+              }
+            } catch (err) {
+              output += "Error reading EXIF data.\n";
+            }
+          } else if (file.type.startsWith("video/") || file.type.startsWith("audio/")) {
+            output += "Note: Detailed metadata extraction for video and audio files is limited in the browser.\n";
+          } else {
+            output += "Unsupported file type for detailed analysis.\n";
+          }
+
+          progressContainer.style.display = "none";
+
+          const newWindow = window.open("", "_blank");
+          newWindow.document.write("<pre>" + output + "</pre>");
+          newWindow.document.write("<button onclick='window.print()'>Save as PDF</button>");
+        };
+        reader.readAsArrayBuffer(file);
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
