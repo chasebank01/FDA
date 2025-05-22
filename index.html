@@ -4,250 +4,98 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Forensic Media Analyzer</title>
-
-  <!-- Embedded CSS -->
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4f4f4;
-      color: #333;
-      line-height: 1.6;
-      padding: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #f2f2f2;
+      margin: 0;
+      padding: 0;
     }
     header {
-      text-align: center;
-      margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      background: #1e1e1e;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
     }
     .logo {
-      width: 80px;
-      height: auto;
+      width: 30px;
+      height: 30px;
+      margin-right: 1rem;
     }
-    .upload-section,
-    .metadata-section,
-    .actions {
-      background: #fff;
-      padding: 20px;
-      margin-bottom: 20px;
-      border-radius: 5px;
+    .title {
+      font-size: 1.5rem;
+      font-weight: bold;
     }
-    .upload-section h2 { margin-bottom: 10px; }
-    #fileInput {
-      width: 100%;
-      padding: 10px;
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 2rem;
     }
-    .actions {
-      text-align: center;
+    input[type="file"] {
+      background: #292929;
+      border: 1px solid #444;
+      color: white;
+      padding: 0.5rem;
+      margin: 1rem 0;
+      border-radius: 6px;
     }
-    .actions button {
-      padding: 10px 20px;
-      margin: 5px;
+    .results {
+      background: #1c1c1c;
+      padding: 1rem;
+      margin-top: 1rem;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
+    button {
+      margin-top: 1rem;
+      background: #00b894;
+      color: white;
+      padding: 0.6rem 1rem;
       border: none;
-      background: #007BFF;
-      color: #fff;
       border-radius: 5px;
       cursor: pointer;
     }
-    .actions button:hover {
-      background: #0056b3;
-    }
     footer {
       text-align: center;
-      margin-top: 40px;
-      color: #777;
-    }
-    @media (max-width: 600px) {
-      .actions button {
-        width: 100%;
-        margin-bottom: 10px;
-      }
+      font-size: 0.9rem;
+      color: #aaa;
+      padding: 2rem;
     }
   </style>
 </head>
 <body>
   <header>
-    <!-- Embedded SVG Logo -->
-    <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="50" cy="50" r="48" fill="#007BFF" stroke="#fff" stroke-width="4"/>
-      <text x="50%" y="55%" font-size="30" fill="#fff" text-anchor="middle" alignment-baseline="middle" font-family="Arial, sans-serif">FMA</text>
+    <svg class="logo" viewBox="0 0 24 24" fill="#00b894" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2L15 8H9L12 2Z" />
+      <path d="M12 22L9 16H15L12 22Z" />
+      <path d="M2 12L8 15V9L2 12Z" />
+      <path d="M22 12L16 9V15L22 12Z" />
     </svg>
-    <h1>Forensic Media Analyzer</h1>
-    <p>Analyze images, videos, and audio files to extract metadata.</p>
+    <div class="title">Forensic Media Analyzer</div>
   </header>
 
-  <main>
-    <section class="upload-section">
-      <h2>Upload Media File</h2>
-      <input type="file" id="fileInput" accept="image/*,video/*,audio/*" />
-    </section>
+  <div class="container">
+    <p><strong>About:</strong><br>
+      This tool lets you run a basic forensic analysis on photos, videos, and audio files. It extracts available metadata like the creation date, file type, and calculates how old the file is — all directly in your browser, no uploads required.
+    </p>
 
-    <section id="metadataDisplay" class="metadata-section">
-      <!-- Metadata output -->
-    </section>
-
-    <section class="actions">
-      <button id="openNewTab">Open in New Tab</button>
-      <button id="saveAsPDF">Save as PDF</button>
-    </section>
-  </main>
+    <input type="file" id="fileInput" accept="image/*,video/*,audio/*" />
+    <div class="results" id="output">Upload a media file to view detailed metadata...</div>
+    <button onclick="window.print()">Save as PDF</button>
+  </div>
 
   <footer>
-    <p>&copy; 2025 Forensic Media Analyzer. All rights reserved.</p>
+    Created for forensic insights using client-side tools. No data is ever uploaded. <br>
+    Inspired by truth-seeking and digital awareness.
   </footer>
 
-  <!-- Embedded JavaScript Libraries -->
   <script>
-    /* EXIF.js */
-    const EXIF = {};
-    (function () {
-      EXIF.getData = function (img, callback) {
-        try {
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            const view = new DataView(e.target.result);
-            img.exifdata = {};
-            callback.call(img);
-          };
-          reader.readAsArrayBuffer(img.srcFile);
-        } catch {
-          img.exifdata = {};
-          callback.call(img);
-        }
-      };
-      EXIF.getAllTags = function (img) {
-        return img.exifdata || {};
-      };
-    })();
-
-    /* jsmediatags (simplified) */
-    const jsmediatags = {
-      read: function (file, { onSuccess, onError }) {
-        const reader = new FileReader();
-        reader.onload = function () {
-          onSuccess({ tags: { title: file.name, size: file.size + ' bytes' } });
-        };
-        reader.onerror = function () {
-          onError(reader.error);
-        };
-        reader.readAsArrayBuffer(file);
-      }
-    };
-
-    /* html2pdf (simplified embed) */
-    function html2pdf() {
-      return {
-        from: function (element) {
-          return {
-            save: function (filename) {
-              const win = window.open('', '_blank');
-              win.document.write('<html><head><title>' + filename + '</title></head><body>' + element.innerHTML + '</body></html>');
-              win.document.close();
-              win.print();
-            }
-          };
-        }
-      };
-    }
-
-    /* Main App Logic */
-    document.addEventListener('DOMContentLoaded', () => {
-      const fileInput = document.getElementById('fileInput');
-      const metadataDisplay = document.getElementById('metadataDisplay');
-      const openNewTabBtn = document.getElementById('openNewTab');
-      const saveAsPDFBtn = document.getElementById('saveAsPDF');
-
-      let currentMetadataHTML = '';
-
-      fileInput.addEventListener('change', handleFileUpload);
-      openNewTabBtn.addEventListener('click', openInNewTab);
-      saveAsPDFBtn.addEventListener('click', saveAsPDF);
-
-      function handleFileUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const fileType = file.type;
-        if (fileType.startsWith('image/')) {
-          extractImageMetadata(file);
-        } else if (fileType.startsWith('audio/')) {
-          extractAudioMetadata(file);
-        } else if (fileType.startsWith('video/')) {
-          extractVideoMetadata(file);
-        } else {
-          alert('Unsupported file type.');
-        }
-      }
-
-      function extractImageMetadata(file) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          const img = new Image();
-          img.srcFile = file;
-          img.onload = function () {
-            EXIF.getData(img, function () {
-              const allMetaData = EXIF.getAllTags(this);
-              displayMetadata(file.name, 'Image', allMetaData);
-            });
-          };
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      }
-
-      function extractAudioMetadata(file) {
-        jsmediatags.read(file, {
-          onSuccess: function (tag) {
-            displayMetadata(file.name, 'Audio', tag.tags);
-          },
-          onError: function (error) {
-            displayMetadata(file.name, 'Audio', { error: 'Unable to read metadata.' });
-          }
-        });
-      }
-
-      function extractVideoMetadata(file) {
-        const video = document.createElement('video');
-        video.preload = 'metadata';
-        video.onloadedmetadata = function () {
-          const metadata = {
-            duration: video.duration.toFixed(2) + ' sec',
-            width: video.videoWidth,
-            height: video.videoHeight
-          };
-          displayMetadata(file.name, 'Video', metadata);
-          URL.revokeObjectURL(video.src);
-        };
-        video.onerror = function () {
-          displayMetadata(file.name, 'Video', { error: 'Unable to read metadata.' });
-        };
-        video.src = URL.createObjectURL(file);
-      }
-
-      function displayMetadata(fileName, fileType, metadata) {
-        let html = `<h3>${fileType} Metadata for "${fileName}"</h3><ul>`;
-        for (const [key, value] of Object.entries(metadata)) {
-          html += `<li><strong>${key}:</strong> ${value}</li>`;
-        }
-        html += '</ul>';
-        metadataDisplay.innerHTML = html;
-        currentMetadataHTML = html;
-      }
-
-      function openInNewTab() {
-        const newWindow = window.open();
-        newWindow.document.write(`
-          <html><head><title>Metadata Analysis</title>
-          <style>body{font-family:Arial;padding:20px;}h3{color:#333;}ul{list-style:none;padding:0;}li{margin-bottom:5px;}</style>
-          </head><body>${currentMetadataHTML}</body></html>
-        `);
-        newWindow.document.close();
-      }
-
-      function saveAsPDF() {
-        const element = document.createElement('div');
-        element.innerHTML = currentMetadataHTML;
-        html2pdf().from(element).save('metadata-analysis.pdf');
-      }
-    });
-  </script>
-</body>
-</html>
+    function humanAgeDiff(date) {
+      const now = new Date();
+      let diff = now - date;
+      let years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+      let months = Math.floor((diff % (1000 * 60 * 60 * 24 * 365.25)) / (1000 * 60 * 60 * 24 * 30.44));
+      let days = Math.floor((diff % (1000 * 60 * 60 * 24 * 30.44)) / (1000 * 60 * 60 * 24));
+      return `${years} year(s
